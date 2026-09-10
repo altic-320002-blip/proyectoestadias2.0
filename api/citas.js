@@ -1,9 +1,8 @@
 const { supabase } = require('./_lib/supabase');
-const { corsHeaders, parseBody } = require('./_lib/helpers');
+const { jsonResponse, parseBody } = require('./_lib/helpers');
 
 module.exports = async (req, res) => {
-  const headers = corsHeaders();
-  if (req.method === 'OPTIONS') return res.status(200).set(headers).end();
+  if (req.method === 'OPTIONS') return { statusCode: 200, headers: require('./_lib/helpers').corsHeaders() };
 
   try {
     if (req.method === 'GET') {
@@ -25,23 +24,23 @@ module.exports = async (req, res) => {
         medico_nombre: c.medicos?.nombre,
         medico_area: c.medicos?.area
       }));
-      return res.status(200).set(headers).json(mapped);
+      return jsonResponse(200, mapped);
     }
 
     if (req.method === 'POST') {
       const c = parseBody(req.body);
       if (!c.paciente_id || !c.fecha || !c.hora) {
-        return res.status(400).set(headers).json({ error: 'Faltan campos obligatorios' });
+        return jsonResponse(400, { error: 'Faltan campos obligatorios' });
       }
       const payload = { ...c, estado: c.estado || 'Agendada' };
       const { data, error } = await supabase.from('citas').insert(payload).select().single();
       if (error) throw error;
-      return res.status(201).set(headers).json(data);
+      return jsonResponse(201, data);
     }
 
-    return res.status(405).set(headers).json({ error: 'Method Not Allowed' });
+    return jsonResponse(405, { error: 'Method Not Allowed' });
   } catch (e) {
     console.error(e);
-    return res.status(500).set(headers).json({ error: 'No se pudieron obtener las citas', detalle: e.message });
+    return jsonResponse(500, { error: 'No se pudieron obtener las citas', detalle: e.message });
   }
 };

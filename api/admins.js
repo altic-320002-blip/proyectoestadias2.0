@@ -1,10 +1,9 @@
 const { supabase } = require('./_lib/supabase');
-const { corsHeaders, parseBody } = require('./_lib/helpers');
+const { jsonResponse, parseBody } = require('./_lib/helpers');
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
-  const headers = corsHeaders();
-  if (req.method === 'OPTIONS') return res.status(200).set(headers).end();
+  if (req.method === 'OPTIONS') return { statusCode: 200, headers: require('./_lib/helpers').corsHeaders() };
 
   try {
     if (req.method === 'GET') {
@@ -20,7 +19,7 @@ module.exports = async (req, res) => {
         medico_id: a.medico_id,
         medico_nombre: a.medicos?.nombre || null
       }));
-      return res.status(200).set(headers).json(transformed);
+      return jsonResponse(200, transformed);
     }
 
     if (req.method === 'POST') {
@@ -28,11 +27,11 @@ module.exports = async (req, res) => {
       if (a.medico_id && a.password) {
         const { data: med, error: medErr } = await supabase.from('medicos').select('id, email').eq('id', a.medico_id).single();
         if (medErr) throw medErr;
-        if (!med.email) return res.status(400).set(headers).json({ error: 'El médico no tiene correo registrado' });
+        if (!med.email) return jsonResponse(400, { error: 'El médico no tiene correo registrado' });
         const { data: exists } = await supabase.from('admins').select('id').eq('medico_id', a.medico_id).maybeSingle();
-        if (exists) return res.status(409).set(headers).json({ error: 'Este médico ya tiene una cuenta de acceso' });
+        if (exists) return jsonResponse(409, { error: 'Este médico ya tiene una cuenta de acceso' });
         const { data: emailExists } = await supabase.from('admins').select('id').eq('email', med.email.toLowerCase()).maybeSingle();
-        if (emailExists) return res.status(409).set(headers).json({ error: 'Ya existe un admin con ese correo' });
+        if (emailExists) return jsonResponse(409, { error: 'Ya existe un admin con ese correo' });
         const password_hash = crypto.createHash('sha512').update(a.password).digest('hex');
         const payload = {
           email: med.email.toLowerCase(),
@@ -42,21 +41,21 @@ module.exports = async (req, res) => {
         };
         const { data, error } = await supabase.from('admins').insert(payload).select('id, email, role, medico_id').single();
         if (error) throw error;
-        return res.status(201).set(headers).json(data);
+        return jsonResponse(201, data);
       }
-      if (!a.email || !a.password) return res.status(400).set(headers).json({ error: 'Email y contrasena obligatorios' });
+      if (!a.email || !a.password) return jsonResponse(400, { error: 'Email y contrasena obligatorios' });
       const { data: exists } = await supabase.from('admins').select('id').eq('email', a.email.toLowerCase()).maybeSingle();
-      if (exists) return res.status(409).set(headers).json({ error: 'Ya existe un admin con ese correo' });
+      if (exists) return jsonResponse(409, { error: 'Ya existe un admin con ese correo' });
       const password_hash = crypto.createHash('sha512').update(a.password).digest('hex');
       const payload = { email: a.email.toLowerCase(), password_hash, role: a.role || 'admin' };
       const { data, error } = await supabase.from('admins').insert(payload).select('id, email, role').single();
       if (error) throw error;
-      return res.status(201).set(headers).json(data);
+      return jsonResponse(201, data);
     }
 
-    return res.status(405).set(headers).json({ error: 'Method Not Allowed' });
+    return jsonResponse(405, { error: 'Method Not Allowed' });
   } catch (e) {
     console.error(e);
-    return res.status(500).set(headers).json({ error: 'No se pudieron obtener los admins', detalle: e.message });
+    return jsonResponse(500, { error: 'No se pudieron obtener los admins', detalle: e.message });
   }
 };

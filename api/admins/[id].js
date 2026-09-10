@@ -1,26 +1,25 @@
 const { supabase } = require('../../_lib/supabase');
-const { corsHeaders } = require('../../_lib/helpers');
+const { jsonResponse } = require('../../_lib/helpers');
 
 module.exports = async (req, res) => {
-  const headers = corsHeaders();
-  if (req.method === 'OPTIONS') return res.status(200).set(headers).end();
+  if (req.method === 'OPTIONS') return { statusCode: 200, headers: require('../../_lib/helpers').corsHeaders() };
 
   const id = req.query.id;
-  if (!id) return res.status(400).set(headers).json({ error: 'ID requerido' });
+  if (!id) return jsonResponse(400, { error: 'ID requerido' });
 
   try {
     if (req.method === 'DELETE') {
-      const { data: count } = await supabase.from('admins').select('id', { count: 'exact', head: true });
+      const { count } = await supabase.from('admins').select('*', { count: 'exact', head: true });
       if ((count || 0) <= 1) {
-        return res.status(400).set(headers).json({ error: 'Debe existir al menos un administrador' });
+        return jsonResponse(400, { error: 'Debe existir al menos un administrador' });
       }
       const { error } = await supabase.from('admins').delete().eq('id', id);
       if (error) throw error;
-      return res.status(200).set(headers).json({ ok: true });
+      return jsonResponse(200, { ok: true });
     }
-    return res.status(405).set(headers).json({ error: 'Method Not Allowed' });
+    return jsonResponse(405, { error: 'Method Not Allowed' });
   } catch (e) {
     console.error(e);
-    return res.status(500).set(headers).json({ error: 'Error admin', detalle: e.message });
+    return jsonResponse(500, { error: 'Error admin', detalle: e.message });
   }
 };

@@ -1,7 +1,8 @@
-const { corsHeaders } = require('./_lib/helpers');
+const { corsHeaders, jsonResponse } = require('./_lib/helpers');
 
 module.exports = async (req, res) => {
-  const headers = corsHeaders();
-  if (req.method === 'OPTIONS') return res.status(200).set(headers).end();
-  return res.status(200).set(headers).json({ status: 'ok', source: 'vercel', db: true });
+  if (req.method === 'OPTIONS') {
+    return { statusCode: 200, headers: corsHeaders() };
+  }
+  return jsonResponse(200, { status: 'ok', source: 'vercel', db: true });
 };

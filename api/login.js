@@ -1,27 +1,26 @@
 const { supabase } = require('./_lib/supabase');
-const { corsHeaders, parseBody } = require('./_lib/helpers');
+const { corsHeaders, parseBody, jsonResponse, errorResponse } = require('./_lib/helpers');
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
   const headers = corsHeaders();
   if (req.method === 'OPTIONS') {
-    return res.status(200).set(headers).end();
+    return { statusCode: 200, headers };
   }
   if (req.method !== 'POST') {
-    return res.status(405).set(headers).json({ error: 'Method Not Allowed' });
+    return jsonResponse(405, { error: 'Method Not Allowed' });
   }
 
   try {
     const body = parseBody(req.body);
     const { email, password } = body || {};
     if (!email || !password) {
-      return res.status(400).set(headers).json({ error: 'Faltan credenciales' });
+      return jsonResponse(400, { error: 'Faltan credenciales' });
     }
 
     const emailNorm = email.trim().toLowerCase();
     const passwordHash = crypto.createHash('sha512').update(password).digest('hex');
 
-    // 1. Buscar en admins
     const { data: admins, error: adminErr } = await supabase
       .from('admins')
       .select('id, email, role')
@@ -31,10 +30,9 @@ module.exports = async (req, res) => {
 
     if (adminErr) throw adminErr;
     if (admins) {
-      return res.status(200).set(headers).json({ role: 'admin', user: admins });
+      return jsonResponse(200, { role: 'admin', user: admins });
     }
 
-    // 2. Buscar en medicos
     const { data: docs, error: docErr } = await supabase
       .from('medicos')
       .select('id, nombre, area, email')
@@ -44,12 +42,12 @@ module.exports = async (req, res) => {
 
     if (docErr) throw docErr;
     if (docs) {
-      return res.status(200).set(headers).json({ role: 'doctor', user: docs });
+      return jsonResponse(200, { role: 'doctor', user: docs });
     }
 
-    return res.status(401).set(headers).json({ error: 'Correo o contraseña incorrectos' });
+    return jsonResponse(401, { error: 'Correo o contraseña incorrectos' });
   } catch (e) {
     console.error('Login error:', e);
-    return res.status(500).set(headers).json({ error: 'No se pudo iniciar sesión', detalle: e.message });
+    return jsonResponse(500, { error: 'No se pudo iniciar sesión', detalle: e.message });
   }
 };
