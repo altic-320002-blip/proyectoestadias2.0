@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "hospital-citas-backend",
   "version": "1.0.0",
   "description": "Backend Node.js + Express para el Sistema de Citas Medicas del Hospital General Rosamorada",
