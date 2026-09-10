@@ -1,7 +1,5 @@
 // Configuración de API para el proyecto Hospital Citas
-// Cambia esta URL según el dispositivo / red donde se ejecute el frontend
-// Ejemplos:
-// - Desde la misma PC con backend Node: "http://localhost:3001/api"
-// - Desde celular/tablet en la misma red: "http://192.168.1.10:3001/api"
-// - Netlify Functions con Supabase: "https://sistemadecitasmedicasderosamorada.netlify.app/.netlify/functions"
-window.API_BASE_URL = "https://sistemadecitasmedicasderosamorada.netlify.app/.netlify/functions";
+// Para Vercel, usa ruta relativa '/api'
+// Para desarrollo local con backend Express, descomenta la línea de localhost
+window.API_BASE_URL = "/api";
+// window.API_BASE_URL = "http://localhost:3001/api"; // desarrollo local con Express + MySQL

@@ -1,0 +1,36 @@
+const { supabase } = require('../../_lib/supabase');
+const { corsHeaders, parseBody } = require('../../_lib/helpers');
+
+module.exports = async (req, res) => {
+  const headers = corsHeaders();
+  if (req.method === 'OPTIONS') return res.status(200).set(headers).end();
+
+  const id = req.query.id;
+  if (!id) return res.status(400).set(headers).json({ error: 'ID requerido' });
+
+  try {
+    if (req.method === 'GET') {
+      const { data, error } = await supabase.from('citas').select('*').eq('id', id).single();
+      if (error) throw error;
+      return res.status(200).set(headers).json(data);
+    }
+
+    if (req.method === 'PUT') {
+      const c = parseBody(req.body);
+      const { data, error } = await supabase.from('citas').update(c).eq('id', id).select().single();
+      if (error) throw error;
+      return res.status(200).set(headers).json(data);
+    }
+
+    if (req.method === 'DELETE') {
+      const { error } = await supabase.from('citas').delete().eq('id', id);
+      if (error) throw error;
+      return res.status(200).set(headers).json({ ok: true });
+    }
+
+    return res.status(405).set(headers).json({ error: 'Method Not Allowed' });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).set(headers).json({ error: 'Error cita', detalle: e.message });
+  }
+};
