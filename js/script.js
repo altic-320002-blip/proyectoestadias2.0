@@ -1075,7 +1075,8 @@ function updateDoctorSelect(filterDias) {
     let filteredDoctors = doctors;
     // Filtrar por días de trabajo según la fecha seleccionada
     if (filterDias) {
-        const date = new Date(filterDias);
+        const [y,m,d] = filterDias.split('-').map(Number);
+        const date = new Date(y, m-1, d);
         const day = date.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
         // Lunes (1) a Viernes (5) = L-V, Domingo (0) y Sábado (6) = S-D
         const esDiaUtil = day >= 1 && day <= 5;
@@ -1258,7 +1259,7 @@ function renderDoctorAgenda() {
         const section = document.createElement('div');
         section.className = 'card';
         section.innerHTML = `<h3 class="mb-10">${doctor}</h3>`;
-        const apps = grouped[doctor].sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+        const apps = grouped[doctor].sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
         const html = apps.map(app => {
             const patient = patients.find(p => p.id === app.patientId);
             return `
@@ -1827,9 +1828,7 @@ async function downloadDoctorAgendaExcel() {
         const appointmentsForDoctor = grouped[doctor]
             .slice()
             .sort((a, b) => {
-                const dateA = new Date(`${a.date} ${a.time}`);
-                const dateB = new Date(`${b.date} ${b.time}`);
-                return dateA - dateB;
+                return (a.date + a.time).localeCompare(b.date + b.time);
             });
 
         // Fila separadora del médico
@@ -2091,7 +2090,7 @@ function renderAgenda(filterDate = null) {
     }
 
     agendaDiv.innerHTML = '';
-    filteredApps.sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+    filteredApps.sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
     
     for (const app of filteredApps) {
         const patient = patients.find(p => p.id === app.patientId);
@@ -2219,7 +2218,7 @@ function populateQrSelect() {
     // conservar selección previa
     const prev = sel.value;
     sel.innerHTML = '<option value="">-- Seleccione una cita --</option>';
-    const upcoming = appointments.slice().sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+    const upcoming = appointments.slice().sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
     for (const app of upcoming) {
         const patient = patients.find(p => p.id === app.patientId);
         const text = `#${app.id} | ${app.date} ${app.time} | ${patient ? patient.name : 'Paciente desconocido'} | ${app.doctor}`;
@@ -2231,39 +2230,49 @@ function populateQrSelect() {
     if (prev) sel.value = prev;
 }
 
-function cancelAppointment(id) {
+async function cancelAppointment(id) {
     if (confirm('¿Cancelar esta cita médica?')) {
         const index = appointments.findIndex(a => a.id === id);
         if (index !== -1) {
             appointments[index].status = 'Cancelada';
+            try {
+                await apiUpdateCita(id, mapCitaToApi(appointments[index]));
+            } catch (err) {
+                console.warn('API cancel cita fallo:', err.message);
+            }
             saveData();
             renderAgenda(document.getElementById('filterDate')?.value);
             renderDoctorAgenda();
+            await syncFromApi();
             showMessage(document.getElementById('appMsg'), 'Cita cancelada correctamente.');
         }
     }
 }
 
 // Función para ELIMINAR cita permanentemente
-function deleteAppointment(id) {
+async function deleteAppointment(id) {
     if (confirm('⚠️ ¿Eliminar permanentemente esta cita médica?\nEsta acción no se puede deshacer.')) {
         const index = appointments.findIndex(a => a.id === id);
         if (index !== -1) {
-            // Eliminar la cita del arreglo
             const removed = appointments.splice(index, 1)[0];
+            try {
+                await apiDeleteCita(id);
+            } catch (err) {
+                console.warn('API delete cita fallo:', err.message);
+            }
             saveData();
             renderDoctorAgenda();
-            // Si la cita eliminada estaba seleccionada, limpiar la persistencia
             try {
                 clearSelectedAppointmentIfMatchesId(removed.id);
             } catch (e) { /* ignore */ }
             renderAgenda(document.getElementById('filterDate')?.value);
+            await syncFromApi();
             showMessage(document.getElementById('appMsg'), `🗑️ Cita #${id} eliminada permanentemente.`);
         }
     }
 }
 
-function rescheduleAppointment(id) {
+async function rescheduleAppointment(id) {
     const newDate = prompt('Ingrese nueva fecha (YYYY-MM-DD):');
     const newTime = prompt('Ingrese nueva hora (HH:MM):');
     if (newDate && newTime) {
@@ -2272,9 +2281,15 @@ function rescheduleAppointment(id) {
             app.date = newDate;
             app.time = newTime;
             app.status = 'Reagendada';
+            try {
+                await apiUpdateCita(id, mapCitaToApi(app));
+            } catch (err) {
+                console.warn('API update cita fallo, guardando local:', err.message);
+            }
             saveData();
             renderAgenda(document.getElementById('filterDate')?.value);
             renderDoctorAgenda();
+            await syncFromApi();
             showMessage(document.getElementById('appMsg'), `Cita #${id} reagendada para ${newDate} ${newTime}`);
         }
     }
@@ -2804,10 +2819,12 @@ if (!patientId || !doctor || !date || !time) {
         return;
     }
 
-// Determinar qué días trabaja el médico seleccionado
+    // Determinar qué días trabaja el médico seleccionado
     const doctorRecord = doctors.find(d => `${d.name} | ${d.area}` === doctor || d.name === doctor);
     const doctorWorksOnWeekday = doctorRecord ? doctorRecord.dias_trabaja === 'L-V' : false;
-    const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+    const [y,m,d] = date.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
     
     // Verificar que el médico fue encontrado y trabaja en el día seleccionado
     if (!doctorRecord) {

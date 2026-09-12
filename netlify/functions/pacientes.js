@@ -35,7 +35,9 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'PUT') {
       if (!id) return json(400, { error: 'ID requerido' });
       const body = parseBody(event);
-      const { data, error } = await supabase.from('pacientes').update(body).eq('id', id).select().single();
+      const updatePayload = { ...body };
+      if (updatePayload.curp) updatePayload.curp = updatePayload.curp.toUpperCase();
+      const { data, error } = await supabase.from('pacientes').update(updatePayload).eq('id', id).select().single();
       if (error) throw error;
       return json(200, data);
     }

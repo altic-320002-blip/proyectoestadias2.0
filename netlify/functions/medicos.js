@@ -58,6 +58,7 @@ exports.handler = async (event) => {
       if (!id) return json(400, { error: 'ID requerido' });
       const d = parseBody(event);
       let updatePayload = { ...d };
+      if (d.email) updatePayload.email = d.email.toLowerCase();
       if (d.password) {
         updatePayload.password_hash = crypto.createHash('sha512').update(d.password).digest('hex');
         delete updatePayload.password;
