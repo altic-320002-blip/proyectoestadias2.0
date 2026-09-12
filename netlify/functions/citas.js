@@ -10,8 +10,9 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod === 'GET') {
       if (id) {
-        const { data, error } = await supabase.from('citas').select('*').eq('id', id).single();
+        const { data, error } = await supabase.from('citas').select('*').eq('id', id).maybeSingle();
         if (error) throw error;
+        if (!data) return json(404, { error: 'Cita no encontrada' });
         return json(200, data);
       }
       const { data, error } = await supabase.from('citas').select('id, paciente_id, medico_id, fecha, hora, motivo, estado, pacientes(nombre, curp), medicos(nombre, area)').order('fecha', { ascending: false });

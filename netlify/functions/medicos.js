@@ -22,8 +22,9 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod === 'GET') {
       if (id) {
-        const { data, error } = await supabase.from('medicos').select('id, nombre, area, telefono, email, dias_trabaja, hora_entrada, hora_salida').eq('id', id).single();
+        const { data, error } = await supabase.from('medicos').select('id, nombre, area, telefono, email, dias_trabaja, hora_entrada, hora_salida').eq('id', id).maybeSingle();
         if (error) throw error;
+        if (!data) return json(404, { error: 'Médico no encontrado' });
         return json(200, data);
       }
       const { data, error } = await supabase.from('medicos').select('id, nombre, area, telefono, email, dias_trabaja, hora_entrada, hora_salida').order('nombre');

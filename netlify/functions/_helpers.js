@@ -17,8 +17,12 @@ function json(statusCode, data) {
 
 function parseBody(event) {
   if (!event.body) return {};
+  let body = event.body;
+  if (event.isBase64Encoded) {
+    body = Buffer.from(body, 'base64').toString('utf8');
+  }
   try {
-    return JSON.parse(event.body);
+    return JSON.parse(body);
   } catch {
     return {};
   }

@@ -10,7 +10,7 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod === 'GET') {
       if (id) {
-        const { data, error } = await supabase.from('pacientes').select('*').eq('id', id).single();
+        const { data, error } = await supabase.from('pacientes').select('*').eq('id', id).maybeSingle();
         if (error) throw error;
         if (!data) return json(404, { error: 'Paciente no encontrado' });
         return json(200, data);
