@@ -1,8 +1,8 @@
 // Configuración de API para el proyecto Hospital Citas
-// Para Vercel, usa ruta relativa '/api'
-// Para desarrollo local con backend Express, descomenta la línea de localhost
+// Netlify Functions con rewrite /api -> /.netlify/functions
 window.API_BASE_URL = "/api";
-// window.API_BASE_URL = "http://localhost:3001/api"; // desarrollo local con Express + MySQL
+// Desarrollo local con Express + MySQL
+// window.API_BASE_URL = "http://localhost:3001/api";
 
 // Supabase para actualizaciones en tiempo real
 window.SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
