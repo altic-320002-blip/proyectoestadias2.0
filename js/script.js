@@ -1045,6 +1045,7 @@ function showMessage(element, msg, isError = false) {
 function updatePatientSelect() {
     const select = document.getElementById('appPatientId');
     if (!select) return;
+    const currentVal = select.value;
     select.innerHTML = '<option value="">-- Elige un paciente registrado --</option>';
     for (const patient of patients) {
         const option = document.createElement('option');
@@ -1052,25 +1053,15 @@ function updatePatientSelect() {
         option.textContent = `${patient.id} - ${patient.name} (${patient.curp})`;
         select.appendChild(option);
     }
-    // Auto-seleccionar médico cuando se elige un paciente
-    select.addEventListener('change', () => {
-        const patientId = Number.parseInt(select.value);
-        if (!patientId) {
-            document.getElementById('appDoctor').value = '';
-            return;
-        }
-        // Asignar médico basándose en el ID del paciente (round-robin)
-        const doctorIndex = (patientId - 1) % doctors.length;
-        const doctorSelect = document.getElementById('appDoctor');
-        if (doctorSelect) {
-            doctorSelect.value = doctors[doctorIndex] ? getDoctorLabel(doctors[doctorIndex]) : '';
-        }
-    });
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+        select.value = currentVal;
+    }
 }
 
 function updateDoctorSelect(filterDias) {
     const doctorSelect = document.getElementById('appDoctor');
     if (!doctorSelect) return;
+    const currentVal = doctorSelect.value;
     doctorSelect.innerHTML = '<option value="">-- Elige un médico --</option>';
     let filteredDoctors = doctors;
     // Filtrar por días de trabajo según la fecha seleccionada
@@ -1092,6 +1083,9 @@ function updateDoctorSelect(filterDias) {
         option.value = getDoctorLabel(doctor);
         option.textContent = `${doctor.name} (${doctor.area})`;
         doctorSelect.appendChild(option);
+    }
+    if (currentVal && Array.from(doctorSelect.options).some(o => o.value === currentVal)) {
+        doctorSelect.value = currentVal;
     }
 }
 
