@@ -1635,6 +1635,8 @@ async function addDoctor(name, area, email) {
     doctors.push(newDoctor);
     saveData();
     renderDoctorList();
+    // Sincronizar con el servidor
+    syncFromApi().catch(() => {});
     updateDoctorSelect();
 }
 
@@ -2679,6 +2681,8 @@ document.getElementById('patientForm')?.addEventListener('submit', async (e) => 
         saveData();
         updatePatientSelect();
         renderPatientList();
+        // Sincronizar con el servidor para que todos los dispositivos vean el cambio
+        syncFromApi().catch(() => {});
         showMessage(document.getElementById('patientMsg'), `✅ Paciente ${name} registrado con ID ${newPatient.id}`);
     }
     document.getElementById('patientForm').reset();
