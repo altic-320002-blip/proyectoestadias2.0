@@ -2109,35 +2109,12 @@ function renderAgenda(filterDate = null) {
                 <button data-id="${app.id}" data-action="delete" class="btn-danger"><i class="fas fa-trash"></i> Eliminar</button>
             </div>
         `;
-        // permitir clic en la tarjeta para autocompletar el campo QR
+        // La tarjeta es solo información, no navega ni activa QR
         card.dataset.id = app.id;
         for (const button of card.querySelectorAll('button')) {
             button.addEventListener('click', (e) => e.stopPropagation());
         }
-        card.addEventListener('click', () => {
-            // Quitar selección de otras tarjetas
-            const others = agendaDiv.querySelectorAll('.card.selected');
-            for (const o of others) o.classList.remove('selected');
-
-            // Marcar esta tarjeta
-            card.classList.add('selected');
-            // Persistir selección
-            setSelectedAppointmentForCurrentUser(app.id);
-
-            const input = document.getElementById('qrAppointmentId');
-            const select = document.getElementById('qrAppointmentSelect');
-            if (input) input.value = app.id;
-            if (select) select.value = String(app.id);
-            // Abrir la pestaña QR si existe
-            const qrTabBtn = document.querySelector('.tab-btn[data-tab="qr"]');
-            if (qrTabBtn) qrTabBtn.click();
-            // Generar QR automáticamente al hacer click
-            try {
-                generateQR();
-            } catch (err) {
-                console.error('Error auto-generando QR:', err);
-            }
-        });
+        // Sin listener de click general sobre la tarjeta para evitar navegación a QR
         agendaDiv.appendChild(card);
     }
 
