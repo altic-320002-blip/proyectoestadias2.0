@@ -1674,6 +1674,8 @@ function editDoctor(index) {
     }
     saveData();
     renderDoctorList();
+    // Sincronizar con el servidor para que todos los dispositivos vean el cambio
+    syncFromApi().catch(() => {});
     renderDoctorAgenda();
     updateDoctorSelect();
 }
@@ -1689,6 +1691,8 @@ async function deleteDoctor(index) {
     doctors.splice(index, 1);
     saveData();
     renderDoctorList();
+    // Sincronizar con el servidor para que todos los dispositivos vean el cambio
+    syncFromApi().catch(() => {});
     renderDoctorAgenda();
     updateDoctorSelect();
 }
@@ -2653,6 +2657,8 @@ document.getElementById('patientForm')?.addEventListener('submit', async (e) => 
             try { await apiUpdatePaciente(patient.id, mapPacienteToApi(patient)); } catch (e) { console.warn('API update paciente fallo:', e.message); }
             saveData();
             renderPatientList();
+            // Sincronizar con el servidor para que todos los dispositivos vean el cambio
+            syncFromApi().catch(() => {});
             renderAdminPatientList();
             updatePatientSelect();
             showMessage(document.getElementById('patientMsg'), `✅ Paciente #${editingPatientId} actualizado.`);
