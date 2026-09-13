@@ -597,6 +597,8 @@ function mapAdminFromApi(a) {
 
 // ========== SINCRONIZACION INICIAL DESDE LA API ==========
 async function syncFromApi() {
+    window.syncFromApi = syncFromApi;
+    // exponer para realtime
     if (typeof apiGetPacientes !== 'function') return; // api.js no cargado
     let adminsApi = [];
     try {
@@ -2453,28 +2455,13 @@ function loadDemoData() {
 }
 
 // ========== 7. EVENT LISTENERS ==========
-document.addEventListener('DOMContentLoaded', () => {
-    // Cargar datos demo si no existen
-    if (patients.length === 0) {
-        const storedPatients = localStorage.getItem('hospital_patients');
-        if (!storedPatients || JSON.parse(storedPatients).length === 0) {
-            loadDemoData();
-        } else {
-            patients = JSON.parse(storedPatients);
-            appointments = JSON.parse(localStorage.getItem('hospital_appointments') || '[]');
-            doctors = JSON.parse(localStorage.getItem('hospital_doctors')) || doctors;
-            normalizeDoctorsData();
-            normalizeAppointmentDoctorLabels();
-            nextPatientId = patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1;
-            nextAppointmentId = appointments.length > 0 ? Math.max(...appointments.map(a => a.id)) + 1 : 1;
-        }
-    } else {
-        doctors = JSON.parse(localStorage.getItem('hospital_doctors')) || doctors;
-        normalizeDoctorsData();
-        normalizeAppointmentDoctorLabels();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar que la API está alcanzable antes de renderizar
+    if (typeof apiHealth === 'function') {
+        const ok = await apiHealth().catch(()=>false);
+        if (!ok) console.warn('API no responde, se intentará caché local');
     }
-
-    // === Sincronizacion inicial con el backend MySQL (si esta disponible) ===
+    // Sincronizar primero desde el servidor central. LocalStorage solo como caché de respaldo.
     async function doSync() {
         try {
             await syncFromApi();
@@ -2482,9 +2469,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("Sincronización automática falló:", e.message);
         }
     }
-    doSync();
-    // Sincronización automática cada 2 segundos para casi tiempo real en todos los dispositivos
-    setInterval(doSync, 2000);
+    await doSync();
+    // Sincronización en tiempo real vía Supabase Realtime. Sin polling.
+    // setInterval(doSync, 15000);
     
     // Cargar estados geográficos
     loadStates();
