@@ -2424,6 +2424,17 @@ function generateQR() {
 
         qrContainer.appendChild(infoDiv);
 
+        const hideBtn = document.createElement('button');
+        hideBtn.type = 'button';
+        hideBtn.textContent = 'Ocultar código QR';
+        hideBtn.className = 'btn-secondary mt-10';
+        hideBtn.addEventListener('click', () => {
+            qrContainer.innerHTML = '';
+            const msgDiv = document.getElementById('qrMsg');
+            if (msgDiv) showMessage(msgDiv, 'Código QR oculto.');
+        });
+        qrContainer.appendChild(hideBtn);
+
         const msgDiv = document.getElementById('qrMsg');
         if (msgDiv) {
             showMessage(msgDiv, `✅ QR generado para cita #${app.id}. Escanea el código para descargar el comprobante automáticamente.`);
