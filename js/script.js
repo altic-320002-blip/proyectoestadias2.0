@@ -2402,8 +2402,20 @@ function generateQR() {
     }
 
     try {
+        qrContainer.innerHTML = '';
 
-        new QRCode(qrContainer, {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.gap = '24px';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.alignItems = 'flex-start';
+        wrapper.style.flexWrap = 'wrap';
+
+        const qrBox = document.createElement('div');
+        const infoBox = document.createElement('div');
+        infoBox.style.minWidth = '220px';
+
+        new QRCode(qrBox, {
             text: qrData,
             width: 200,
             height: 200,
@@ -2411,9 +2423,7 @@ function generateQR() {
         });
 
         const infoDiv = document.createElement('div');
-
         infoDiv.className = 'mt-15';
-
         infoDiv.innerHTML = `
             <p><strong>Cita:</strong> ${app.id}</p>
             <p><strong>Paciente:</strong> ${patient ? patient.name : 'N/A'}</p>
@@ -2421,21 +2431,28 @@ function generateQR() {
             <p><strong>Hora:</strong> ${app.time}</p>
             <p><strong>Médico:</strong> ${app.doctor}</p>
         `;
-
-        qrContainer.appendChild(infoDiv);
+        infoBox.appendChild(infoDiv);
 
         const hideBtn = document.createElement('button');
         hideBtn.type = 'button';
         hideBtn.textContent = 'Ocultar código QR';
         hideBtn.className = 'btn-secondary mt-10';
-        hideBtn.style.fontSize = '0.8rem';
-        hideBtn.style.padding = '4px 10px';
+        hideBtn.style.fontSize = '0.75rem';
+        hideBtn.style.padding = '6px 12px';
+        hideBtn.style.display = 'inline-flex';
+        hideBtn.style.alignItems = 'center';
+        hideBtn.style.justifyContent = 'center';
+        hideBtn.style.whiteSpace = 'nowrap';
         hideBtn.addEventListener('click', () => {
             qrContainer.innerHTML = '';
             const msgDiv = document.getElementById('qrMsg');
             if (msgDiv) showMessage(msgDiv, 'Código QR oculto.');
         });
-        qrContainer.appendChild(hideBtn);
+        infoBox.appendChild(hideBtn);
+
+        wrapper.appendChild(qrBox);
+        wrapper.appendChild(infoBox);
+        qrContainer.appendChild(wrapper);
 
         const msgDiv = document.getElementById('qrMsg');
         if (msgDiv) {
