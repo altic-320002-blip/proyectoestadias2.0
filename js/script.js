@@ -2405,8 +2405,8 @@ function generateQR() {
 
         new QRCode(qrContainer, {
             text: qrData,
-            width: 220,
-            height: 220,
+            width: 200,
+            height: 200,
             correctLevel: QRCode.CorrectLevel.L
         });
 
@@ -2428,6 +2428,8 @@ function generateQR() {
         hideBtn.type = 'button';
         hideBtn.textContent = 'Ocultar código QR';
         hideBtn.className = 'btn-secondary mt-10';
+        hideBtn.style.fontSize = '0.9rem';
+        hideBtn.style.padding = '6px 12px';
         hideBtn.addEventListener('click', () => {
             qrContainer.innerHTML = '';
             const msgDiv = document.getElementById('qrMsg');
